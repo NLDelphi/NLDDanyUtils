@@ -1,0 +1,122 @@
+<html>
+<head>
+<title> Example of the usage of the "NLDExecProcedure" unit </title>
+</head>
+<body>
+<pre>
+
+<h2><u>Example of the usage of the "NLDExecProcedure" unit</u></h2>
+
+
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls,
+  <b>NLDExecprocedure;</b>  
+
+type
+  TForm1 = class(TForm)
+    Label1: TLabel;
+    Edit1: TEdit;    { <-- the input field for the filename to be found }
+    Label2: TLabel;
+    Label3: TLabel;  { <-- shows which directory is searched now }
+    Label4: TLabel;
+    Label5: TLabel;  { <-- shows where the file is found }
+    Button1: TButton;
+    procedure Button1Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+
+implementation
+
+{$R *.dfm}
+
+
+
+(* Below is the procedure that will be called in the current directory and
+in every subdirectory of it (provided 'subdirs' was true in the call of 'execute_proc'.
+If the procedure finds out that the execution of it in every subdirectory
+can be stopped then it should (besides save the found data) set also the 'Cont'
+variable to 'false'.
+The procedure below searches, as an example, the file given in 'Form1.Edit1.Text'.
+*)
+
+procedure Check(var Cont:boolean);
+var Dir: string;
+begin
+  { the following three lines are only there to show the search progress }
+  GetDir(0, Dir);               { get current directory }
+  Form1.label3.caption := Dir;  { and show it }
+  Form1.Label3.Update;          { do not forget this, or it will happen very rare }
+
+  if FileExists(Form1.Edit1.Text) then  { here is the check for the file presence }
+  begin { found! }
+    Cont := false; { the file has been found, do not continue any more }
+    GetDir(0, dir); { get the current directory }
+    Form1.label5.caption := dir; { and show it }
+  end;
+
+end;
+
+
+
+(* Below is the procedure that initiates the call to 'ExecuteProcedure'.
+Basically it should define a boolean variable that defines if the execution of the
+procedure should be continued (true) or stopped (false). This varaible has to be set always
+to 'true' before the call to force at least one execution of your procedure. Also
+it should switch to the directory the search is to start from.
+Optionally, it can get and save the current directory before the call and restore
+it afterwards.
+*)
+
+procedure TForm1.Button1Click(Sender: TObject);
+var OldDir: string;
+    Cont: boolean;
+    Subdirs: boolean;
+begin
+
+  GetDir(0,OldDir); { get and save the current directory }
+
+{ The following 4 lines are not necessary for the execute process }
+  Form1.Label3.Caption := '';
+  Form1.Label3.update;
+  Form1.Label5.Caption := '';
+  Form1.Label5.update;
+
+  Chdir('C:\');     { the search will start in the root directory }
+  Subdirs := true;  { check all subdirectories also }
+  Cont := true;     { always set to 'true' before calling the 'execute_proc' procedure }
+  ExecuteProcedure(Check,    { this is your procedure that has to executed in the current
+                             directory (and probalby in its subdirectories) }
+                   subdirs,  { this variable (may also be a constant) indicates if also
+                            subdirectories have to execute your procedure }
+                   cont);    { this variable has always to be 'true' before the call of
+                            'exec_proc'. }
+  { check the result }
+  if Cont then
+  begin             { all subdirs were scanned, the file was not found }
+    ShowMessage('File not found');
+  end
+  else begin        { the file was found }
+    ShowMessage('File found in '+ Form1.label5.caption);
+  end;
+
+  Chdir(OldDir); { restore the 'old' current directory }
+
+end;
+
+end.
+
+</pre>
+</body>
+</html>

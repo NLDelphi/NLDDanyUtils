@@ -1,0 +1,59 @@
+<html>
+<head>
+<title> Example of the usage of the "NLDGetWindows" unit </title>
+</head>
+<body>
+<pre>
+
+<h2><u>Example of the usage of the "NLDGetWindows" unit</u></h2>
+
+
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls;
+
+type
+  TForm1 = class(TForm)
+    ComboBox1: TComboBox;
+    Button1: TButton;
+    procedure FormShow(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+uses <b>NLDGetWindows;</b>
+
+{$R *.dfm}
+
+procedure TForm1.FormShow(Sender: TObject);
+begin
+  <b>BuildListOfWindows(ComboBox1.Items)</b>;     // make list of windows
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+var Hnd : THandle;
+begin
+  if ComboBox1.Text > '' then
+  begin
+    Hnd := <b>GetWindowHandle(ComboBox1.Text)</b>;       // get a window handle
+    if (Hnd <> 0) then SetForegroundWindow(Hnd);  // and use it for your own purpose
+  end;
+end;
+
+end.
+
+</pre>
+</body>
+</html>

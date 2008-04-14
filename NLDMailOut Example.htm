@@ -1,0 +1,67 @@
+<html>
+<head>
+<title> Example of the usage of the "NLD MailOut" unit </title>
+</head>
+<body>
+<pre>
+
+<h2><u>Example of the usage of the "NLDMailOut" unit</u></h2>
+
+
+<b>// inclusion in the uses clause of your program</b>
+
+uses
+  ..., NLDMailOut, ...;
+
+
+
+<b>// This is the procedure to send the mail</b>
+
+procedure SendMailNow;
+var List: TStrings;                // only needed if you want to send attachments
+begin
+  
+  <b>// Prepare for attachments (if any) </b>
+  List := TStringList.Create;      // only needed if you want to send attachments
+  List.Add('test.html');           // only needed if you want to send attachments, do this for
+  List.Add('...');                 //   every attchment	
+
+  <b>// Overrule default settings if necessary.</b>
+  // Default the Mail server parameters and the addresses set with "SMTPSetup" are used, but
+  // If you want to overrule the mail parameters set in "SMTPSetup" then do the following:
+  //   to overrule the mail server parameters:
+  <b>SetMailOutParams</b>(Host, Port, AuthenticationType, Id, Pw);
+  //   to overrule the sender mail address and the return mail address:
+  <b>SetMailOutAddresses</b>(From, Answer);
+  
+
+  <b>// Send the mail</b>
+  <b>SendMail</b>('Subject',              // the subject of your mail
+
+    'aaa.bbb@ccc',                 // the destination(s) of your mail, comma separated.
+
+    'This is the body of my mail', // the body of your mail, can be a single string, or
+                                   //   a TStrings type
+
+    '',                            // the 'CC' list of your mail, comma separated.
+                                   //   if you have no 'CC' or 'BCC'list and no attachments
+                                   //   you can leave this parameter and also the rest out 
+ 
+    '',                            // the 'BCC' list of your mail, comma separated.
+                                   //   if you have no 'BCC'list and no attachments
+                                   //   you can leave this parameter and also the rest out
+
+    List                           // The list of attachments (can be left out if none)
+  );
+
+  <b>// Clean up </b>
+  List.Free;                       // only needed if you want to send attachments
+  
+end;
+
+
+
+<b>// that's all folks!</b>
+</pre>
+</body>
+</html>

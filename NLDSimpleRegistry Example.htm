@@ -1,0 +1,62 @@
+<html>
+<head>
+<title> Example of the usage of the "NLDSimpleRegistry" unit </title>
+</head>
+<body>
+<pre>
+
+<h2><u>Example of the usage of the "NLDSimpleRegistry" unit</u></h2>
+
+<b>// add the SimpleRegistry unit to your project</b>
+
+implementation
+
+{$R *.DFM}
+
+uses <b>NLDSimpleRegistry</b>;
+
+<b> Definition of the key to write to or read in </b>
+
+const SmtpRegister = 'Software\Rcs\Smtp\';
+
+
+<b> Example of writing to the registry </b>
+// In this example the members of the record 'info' are written to the registry
+
+procedure TSMTPSetupForm.writesmtp;
+var f: TSimpleRegistry;
+begin
+  put; // put all values from the UI info the 'info' record
+  f := TSimpleRegistry.Create;
+  f.WriteString (SmtpRegister + 'Configuration', 'Server',      info.smtp_server);
+  f.WriteString (SmtpRegister + 'Configuration', 'Port',        info.smtp_port);
+  f.WriteInteger(SmtpRegister + 'Login',         'UseLogin',    Integer(info.smtp_use_login));
+  f.WriteString (SmtpRegister + 'Login',         'AccountName', info.smtp_account_name);
+  f.WriteString (SmtpRegister + 'Login',         'Password',    info.smtp_password);
+  f.WriteString (SmtpRegister + 'Addresses',     'Email',       info.email_adres);
+  f.WriteString (SmtpRegister + 'Addresses',     'Answer',      info.antwoord_adres);
+  f.Free;
+end;
+
+
+<b> Example of reading from the registry </b>
+// In this example the members of the record 'info' are read from the registry
+
+procedure TSMTPSetupForm.readsmtp;
+var f: TSimpleRegistry;
+begin
+  f := TSimpleRegistry.Create;
+  info.smtp_server       := f.ReadString (SmtpRegister + 'Configuration', 'Server', '');
+  info.smtp_port         := f.ReadString (SmtpRegister + 'Configuration', 'Port', '25');
+  info.smtp_use_login    := TAuthenticationType(f.ReadInteger(SmtpRegister + 'Login', 'UseLogin', Integer(atNone)));
+  info.smtp_account_name := f.ReadString (SmtpRegister + 'Login',         'AccountName', '');
+  info.smtp_password     := f.ReadString (SmtpRegister + 'Login',         'Password', '');
+  info.email_adres       := f.ReadString (SmtpRegister + 'Addresses',     'Email', '');
+  info.antwoord_adres    := f.ReadString (SmtpRegister + 'Addresses',     'Answer', '');
+  f.Free;
+  get; // get all values from the the 'info' record into the UI
+end;
+
+
+</pre>
+</body>

@@ -1,0 +1,123 @@
+<html>
+<head>
+<title> Example of the usage of the "NLDRcsFileUtils" unit </title>
+</head>
+<body>
+
+<h2><u>Example of the usage of the "NLDRcsFileUtils" unit</u></h2>
+
+The following examples assume the existance of a TMemo component called "Memo1", and 2 editboxes called "Edit1" and "Edit2.
+<BR><BR>
+Remark:
+The following 2 examples have the same effect:
+<pre>
+MakeFileList('xxx\*.pas', ...   
+</pre>
+  and
+<pre>
+ChDir('xxx');                   
+MakeFileList('*.pas', ...
+</pre>
+<BR>
+<BR>
+Example with <B>"GetFileNames"</B>: make a list of names of files and directories that are 
+or are not read/only:
+<pre>
+procedure TForm1.Button1Click(Sender: TObject);
+begin
+  Memo1.Lines.Clear;
+  Memo1.Update;  
+  GetFileNames('D:\De*phi Projects\Re*se\Base1\*.*',  // starting directory + filename 
+    // the starting directory = 'D:\De*phi Projects\Re*se\Base1', the filename = '*.*'            
+  faFile + faDirectory                        // files or directories to be found
+  + faNormal + faReadOnly,                    // normal status or R/O status
+  acRelaxed,                                  // relaxed checking
+  false,                                      // do not remove the extension in the names found 
+  Memo1.Lines,                                // put the result in Memo1
+  true,                                       // search also in subdirectories
+  ipFull);                                    // include the full path in the results
+end;
+</pre>
+<BR>
+Example with <B>"FileNameExists"</B>:
+<pre>
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+  Edit1.Text := '';
+  Edit1.Update;  
+  Edit1.Text :=  
+   FileNameExists('D:\friet*.*', // starting directory = 'D:\', filename = 'friet*.*'
+                  faNormal,      // 'normal' files only 
+                  acRelaxed,     // relaxed checking
+                  true,          // search also in subdirectories
+                  ipFull);       // include the full path in the results
+end;
+</pre>
+<BR>
+Example with <B>"MakeFileList"</B>:
+<pre>
+procedure TForm1.Button3Click(Sender: TObject);
+var List : TFileList;
+    I    : longword;
+    Rec  : TSearchRec;
+    Name : string;
+begin
+  Memo1.Lines.Clear;
+  Memo1.Update;
+  List := TFileList.Create; // create the filelist
+  try
+    // fill the list
+    List.MakeFileList
+    ('D:\D?lphi Projects\Re?se\Base1\*.*', // starting dir and filename
+     faFile,                               // only normal files 
+     acRelaxed,                            // relaxed checking
+     true,                                 // search also in subdirectories
+     ipFull);                              // include the full path in the results  
+
+    // process the list's content    
+    For I := 1 to List.Count Do // process all entries (be aware: indexes go from 1 to count!)
+    begin
+      List.GetEntry(I, Rec);    // get entry [i] from the list
+      Name := Rec.Name;         // process the entry here, e.g. get the name
+      Memo1.Lines.Add(Name);
+      // other processing here...
+    end;
+
+  finally
+    List.Free;               // finally remove the list from memory
+  end;
+end;
+</pre>
+<BR>
+Example with <B>"DirectoryNameExists"</B>:
+<pre>
+procedure TForm1.Button6Click(Sender: TObject);
+begin
+  Edit1.Text := '';
+  Edit1.Update;
+  Edit1.Text := 
+   DirectoryNameExists('..\..\..\Delphi Pr*ects\Re*se\B*e1\*', // directory to be found
+   false);  // do not include the tralingbackslash to the name found.
+end;
+</pre>
+<BR>
+Example with <B>"ExpandToLongPathname"</B>:
+<pre>
+procedure TForm1.Button4Click(Sender: TObject);
+const fn1 = '\Delphi Projects\Tests\Nieuwe map met lange naam\nog een nieuwe map met een nog langere naam\Nieuw - Tekstdocument met een zeer lange naam.txt';
+      fn2 = '\Delphi Projects\Tests\Nieuwe map met lange naam\nog een nieuwe map met een nog langere naam\Nieuw - Tekstdocument met een zeer lange naam1.txt';
+// both files must exist!!
+var   ShortPath, LongPath: string;
+begin
+  ShortPath := ExtractShortPathName(fn1);             // get short pathname first
+  LongPath := ExpandToLongPathName(ShortPath, false); // and convert it back
+  Edit1.Text := LongPath;
+
+  ShortPath := ExtractShortPathName(fn2);             // get short pathname first
+  LongPath := ExpandToLongPathName(ShortPath, false); // and convert it back
+  Edit2.Text := LongPath;
+end;
+</pre>
+
+</body>
+</html>

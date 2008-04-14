@@ -1,0 +1,58 @@
+<html>
+<head>
+<title> Example of the usage of the "NLDGetProcesses" unit </title>
+</head>
+<body>
+<pre>
+
+<h2><u>Example of the usage of the "NLDGetProcesses" unit</u></h2>
+
+
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls;
+
+type
+  TForm1 = class(TForm)
+    ComboBox1: TComboBox;
+    Button1: TButton;
+    procedure FormShow(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+uses <b>NLDGetProcesses;</b>                            // unit to use
+
+{$R *.dfm}
+
+procedure TForm1.FormShow(Sender: TObject);
+begin
+  <b>BuildListOfProcesses(ComboBox1.Items)</b>;         // make list of processes
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+var Id : LongWord;
+begin
+  if ComboBox1.Text > '' then
+  begin
+    Id := <b>GetProcessId(ComboBox1.Text);</b>          // get the id of the process
+    if (Id <> 0) then {...} ;                    // and use it for your own purpose
+  end;
+end;
+
+end.
+</pre>
+</body>
+</html>
