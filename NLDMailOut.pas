@@ -1,6 +1,6 @@
 unit NLDMailOut;
 
-// Dany Rosseel
+// Dany Rosseel 
 
 { History of this unit
 28-10-2003: * Initial version
