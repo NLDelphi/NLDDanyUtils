@@ -1,6 +1,6 @@
 unit NLDRcsCSV;
 
-// Dany Rosseel 
+// Dany Rosseel
 
 {$DEFINE NoDebug} // Disable debug possibilities and range checking (= faster)
 // {.$Define NoDebug}: During debugging

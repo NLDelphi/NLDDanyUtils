@@ -4,7 +4,7 @@ unit NLDExecute;
 
 {$DEFINE NoDebug} // Disable debug possibilities and range checking (= faster)
 // {.$Define NoDebug}: During debugging
-// {$Define NoDebug} : During "normal" use 
+// {$Define NoDebug} : During "normal" use
 
 
 { History of this unit
