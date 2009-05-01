@@ -2,7 +2,7 @@ unit NLDRcsFileUtils;
 
 // Dany Rosseel
 
-{$DEFINE NoDebug}// Disable debug possibilities and range checking (= faster)
+{.$DEFINE NoDebug}// Disable debug possibilities and range checking (= faster)
 // {.$Define NoDebug}: During debugging
 // {$Define NoDebug} : During "normal" use
 
