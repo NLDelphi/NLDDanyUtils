@@ -17,7 +17,8 @@ unit NLDExecProcedure;
                 Directories with "ExecuteProcedure".
   06-11-2005: * Added an overloaded version of "ExecuteProcedure" that takes as parameter a
                 procedure of the signature "procedure(var cont, Brk: Boolean)". The extra "Brk" 
-                var parameter allows to prevent going down further in the directory tree. 
+                var parameter allows to prevent going down further in the directory tree.
+  12-11-2009: * "ExecProcedure" also executes recursively in R/O directories now
 }
 
 
@@ -67,10 +68,9 @@ procedure ExecuteProcedureInPath(Proc: TProcedureToExecute; var Cont: Boolean);
 // Same as the above, but the user defined procedure is executed in every directory
 // of the "PATH" environment variable. The current directory is always first.
 
-
 implementation
 
-uses NLSRcsFileUtils, SysUtils, Classes, NLDRcsEnvironmentVars;
+uses NLDRcsFileUtils, SysUtils, Classes, NLDRcsEnvironmentVars;
 
 // The procedure below executes the procedure "Proc" in the current directory
 // (and recursively in its subdirs if "Recursive" is true) as long as "Cont" is true.
@@ -108,9 +108,9 @@ begin
       try
         with List do
         begin
-          Attr := faDirectory or faNormal;   // we seek for "normal" directories
-          if HiddenDirs then Attr := Attr or faHidden;  // also hidden ones
-          if SystemDirs then Attr := Attr or faSysFile; // or System ones
+          Attr := faDirectory or faNormal or faReadOnly; // we seek for "normal" directories, can be R/O
+          if HiddenDirs then Attr := Attr or faHidden;   // also hidden ones
+          if SystemDirs then Attr := Attr or faSysFile;  // or System ones
 
           MakeFileList('*.*', Attr, acRelaxed); // Make list of directories
 
@@ -157,9 +157,9 @@ begin
       try
         with List do
         begin
-          Attr := faDirectory or faNormal;   // we seek for "normal" directories
-          if HiddenDirs then Attr := Attr or faHidden;  // also hidden ones
-          if SystemDirs then Attr := Attr or faSysFile; // or System ones
+          Attr := faDirectory or faReadOnly or faNormal; // we seek for "normal" directories, can be R/O
+          if HiddenDirs then Attr := Attr or faHidden;   // also hidden ones
+          if SystemDirs then Attr := Attr or faSysFile;  // or System ones
 
           MakeFileList('*.*', Attr, acRelaxed); // Make list of directories
 
@@ -170,6 +170,7 @@ begin
           begin
             GetEntry(I, Rec);
             Chdir(IncludeTrailingBackslash(ParentDirectory) + Rec.Name);     // Change to the subdir
+            {if (not (ParentDirectory = 'C:\Documents and Settings\DanyR')) then}
             ExecuteProcedure(Proc, Recursive, Cont, Brk, HiddenDirs, SystemDirs); // Execute the "procedure" in the subdir
             Inc(I); // next directory in the list
           end;
