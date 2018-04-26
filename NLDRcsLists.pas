@@ -2,12 +2,13 @@ unit NLDRcsLists;
 
 // Dany Rosseel
 
-{$DEFINE NoDebug}// Disable debug possibilities and range checking (= faster)
+{-$DEFINE NoDebug}// Disable debug possibilities and range checking (= faster)
 // {.$Define NoDebug}: During debugging
 // {$Define NoDebug} : During "normal" use
 
 { History of this unit
   16-06-2007: * Initial version, holding "IntegerList" and "StringListList"
+  28-02-2017: Made things simpler: Interface changed, overloaded procedures eliminated.
 }
 
 {$IFDEF NoDebug}
@@ -64,18 +65,14 @@ type
   private
     FStringListList: array of TStringList; // the stringlists
     FCount: Integer; // number of Stringlists
-    Lut: TIntegerList; // LookUp Table
     function GetList(ListIndex: Integer): TStringList;
     procedure SetList(ListIndex: Integer; Val: TStringList);
-    procedure Add_;
   public
     constructor Create;
     destructor Destroy; override;
     procedure Clear;
-    procedure Add; overload;
-    procedure Add(Val: TStringList); overload;
-    procedure Insert(Index: Integer); overload;
-    procedure Insert(Index: Integer; Val: TStringList); overload;
+    procedure Add(Val: TStrings);
+    procedure Insert(Index: Integer; Val: TStrings);
     procedure Delete(Index: Integer);
     procedure Exchange(Index1, Index2: Integer);
     property Count: Integer read FCount write FCount;
@@ -188,14 +185,12 @@ end;
 constructor TStringListList.Create;
 begin
   inherited Create;
-  Lut := TIntegerList.Create;
   SetLength(FStringListList, 0);
 end;
 
 destructor TStringListList.Destroy;
 begin
   Clear;
-  Lut.Free;
   inherited Destroy;
 end;
 
@@ -205,69 +200,87 @@ begin
   for I := 0 to Length(FStringListList) - 1 do FStringListList[I].Free;
   SetLength(FStringListList, 0);
   FCount := 0;
-  Lut.Clear;
 end;
 
 function TStringListList.GetList(ListIndex: Integer): TStringList;
 begin
   Result := nil;
   if (ListIndex >= 0) and (ListIndex < FCount)
-    then Result := FStringListList[Lut[ListIndex]];
+    then Result := FStringListList[ListIndex];
 end;
 
 procedure TStringListList.SetList(ListIndex: Integer; Val: TStringList);
 begin
   if (ListIndex >= 0) and (ListIndex < FCount)
-    then FStringListList[Lut[ListIndex]].Assign(Val);
+    then FStringListList[ListIndex].Assign(Val);
 end;
 
-procedure TStringListList.Add_;
+procedure TStringListList.Add(Val: TStrings);
 begin
   // create an extra stringlist in FStringListList
   SetLength(FStringListList, Length(FStringListList) + 1);
   FStringListList[Length(FStringListList) - 1] := TStringList.Create;
-end;
-
-procedure TStringListList.Add;
-begin
-  Add_; // create a new stringlist
-        // and make the LUT point to the new entry in FStringListList
-  Lut.Add(Length(FStringListList) - 1);
   Inc(FCount);
-end;
 
-procedure TStringListList.Add(Val: TStringList);
-begin
-  Add;
+  // fill the string
   FStringListList[FCount - 1].Assign(Val);
 end;
 
-procedure TStringListList.Insert(Index: Integer);
+procedure TStringListList.Insert(Index: Integer; Val: TStrings);
+var Ind: integer;
+    Lst: TStrings;
 begin
+  // insert an extra entry
   if (Index < 0) or (Index > FCount) then exit;
-  Add_; // add a new stringlist
-        // and make the LUT point to the new entry in FStringListList
-  Lut.Insert(Index, Length(FStringListList) - 1); // insert its index in the LUT
-  Inc(FCount);
-end;
 
-procedure TStringListList.Insert(Index: Integer; Val: TStringList);
-begin
-  Insert(Index);
-  if (Index < FCount) then FStringListList[Lut[Index]].Assign(Val);
+  // create an extra stringlist in FStringListList
+  SetLength(FStringListList, Length(FStringListList) + 1);
+  FStringListList[Length(FStringListList) - 1] := TStringList.Create;
+  Inc(FCount);
+
+  Lst := TStringList.Create;
+
+  for Ind := (FCount - 2) downto Index do // move up in the list
+  begin
+    Lst.Assign(FStringListList[Ind]);
+    FStringListList[Ind + 1].Assign(Lst);
+  end;
+
+  Lst.Free;
+
+  FStringListList[Index].Assign(Val);
 end;
 
 procedure TStringListList.Delete(Index: Integer);
+var Ind: integer;
+    Lst: TStrings;
 begin
   if (Index < 0) or (Index >= FCount) then exit;
-  FStringListList[Lut[Index]].Clear; // no longer used, clear it
-  Lut.Delete(Index);
+
+  Lst := TStringList.Create;
+
+  for Ind := Index to FCount - 2 do // move down in the list
+  begin
+    Lst.Assign(FStringListList[Ind + 1]);
+    FStringListList[Ind].Assign(Lst);
+  end;
+
+  Lst.Free;
+
   Dec(FCount);
 end;
 
 procedure TStringListList.Exchange(Index1, Index2: Integer);
+var Lst: TStrings;
 begin
-  Lut.Exchange(Index1, Index2);
+  Lst := TStringList.Create;
+
+  Lst.Assign(FStringListList[Index1]); // exchange
+  FStringListList[Index1].Assign(FStringListList[Index2]);
+  FStringListList[Index2].Assign(Lst);
+
+  Lst.Free;
+
 end;
 
 end.

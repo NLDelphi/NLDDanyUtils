@@ -2,7 +2,7 @@ unit NLDRcsCSV;
 
 // Dany Rosseel
 
-{$DEFINE NoDebug} // Disable debug possibilities and range checking (= faster)
+{-$DEFINE NoDebug} // Disable debug possibilities and range checking (= faster)
 // {.$Define NoDebug}: During debugging
 // {$Define NoDebug} : During "normal" use
 
@@ -28,6 +28,10 @@ unit NLDRcsCSV;
 10-09-2007: * Corrected an error in the "calculated fields" function.
 16-02-2008: * Corrected an error in the "calculated fields", functions
                 DATETOWEEKNO, DATETOWEEKNOONLY and WEEKNOTODATE
+23-09-2011: * - Adapted "LoadFromFile": the names of the fields are trimmed now
+              - Adapted "DeleteField": error: the field in "Flines" was not deleted
+28-02-2017: * Made the software more understandable.
+02-04-2017: * added the "Replace" functionality            
 }
 
 {$P+} // Open Strings ON
@@ -58,7 +62,7 @@ unit NLDRcsCSV;
 
 interface
 
-uses Classes, RcsLists, RcsEval;
+uses Classes, Windows, NLDRcsLists, NLDRcsEval;
 
 type
 
@@ -72,7 +76,7 @@ type
     procedure SetIndex(No: Integer);
     function IndexValid: boolean;
     function FieldNumberValid(No: Integer): boolean;
-    procedure ReadFields; // at position Index
+    procedure ReadFields;  // at position Index
     procedure WriteFields; // at position Index
   public
     FieldNames, Fields, NewEntry: TStrings;
@@ -87,18 +91,18 @@ type
     procedure Clear;
     function GetField(const No: Integer): string; overload; // data = "Fields"
     function GetField(const Name: string): string; overload; // data = "Fields"
-    procedure SetField(const No: Integer; const Fld: string); overload;
-      // data = "Fields"
-    procedure SetField(const Name: string; const Fld: string); overload;
-      // data = "Fields"
+    procedure SetField(const No: Integer; const Fld: string); overload;  // data = "Fields"
+    procedure SetField(const Name: string; const Fld: string); overload; // data = "Fields"
     procedure Add; // data = "NewEntry"
     procedure Insert(const No: Integer); // data = "NewEntry"
     procedure Delete(const No: Integer);
+    procedure Replace(const No: Integer); // data = "Fields"
+    procedure Exchange(const No1, No2: integer);
     procedure AddField(const Name: string; const Txt: string = '');
-    procedure InsertField(const No: Integer; const Fld: string; const Txt: string
-      = '');
+    procedure InsertField(const No: Integer; const Fld: string; const Txt: string = '');
     function AddCalculatedField(const FieldDef: string): integer;
     procedure DeleteField(const No: Integer);
+    procedure RenameField(const No: Integer; NewName: string);
     procedure CheckIndex(No: Integer);
     procedure CheckFieldNumber(No: Integer);
   end;
@@ -116,17 +120,15 @@ begin
 end;
 
 procedure TCommaSeparatedValues.ReadFields;
-var I: Integer;
 begin
   if IndexValid then
-    for I := 0 to FieldCount - 1 do Fields[I] := FLines[I][Index];
+  Fields.Assign(Flines[Index]);
 end;
 
 procedure TCommaSeparatedValues.WriteFields;
-var I: Integer;
 begin
   if IndexValid then
-    for I := 0 to FieldCount - 1 do Flines[I][Index] := Fields[I];
+  FLines[Index].Assign(Fields);
 end;
 
 procedure TCommaSeparatedValues.CheckIndex(No: Integer);
@@ -145,36 +147,33 @@ end;
 procedure TCommaSeparatedValues.CheckFieldNumber(No: Integer);
 begin
   if not FieldNumberValid(No) then
-    raise ERangeError.CreateFmt(
-      'FieldNumber %d is not within the valid range of %d..%d',
+    raise ERangeError.CreateFmt('FieldNumber %d is not within the valid range of %d..%d',
       [No, 0, FieldNames.Count - 1]);
 end;
 
 procedure TCommaSeparatedValues.Add;
-var I: Integer;
 begin
-  for I := 0 to FieldCount - 1 do FLines[I].Add(NewEntry[I]);
+  FLines.Add(NewEntry);
   Inc(FLineCount);
   Index := FLineCount - 1;
   FChanged := true;
 end;
 
 procedure TCommaSeparatedValues.Insert(const No: Integer);
-var I: Integer;
 begin
   CheckIndex(No);
-  for I := 0 to FieldCount - 1 do FLines[I].Insert(No, NewEntry[I]);
+
+  FLines.Insert(No, NewEntry);
   Inc(FLineCount);
   Index := No;
   FChanged := true;
 end;
 
 procedure TCommaSeparatedValues.Delete(const No: Integer);
-var I: Integer;
 begin
   CheckIndex(No);
-  if Index = No then for I := 0 to FieldCount - 1 do Fields[I] := '';
-  for I := 0 to FieldCount - 1 do FLines[I].Delete(No);
+  Flines.Delete(No);
+
   Dec(FLineCount);
 
   if FLineCount > 0 then
@@ -185,6 +184,23 @@ begin
   end
   else
     Index := -1; // no records left
+    
+  FChanged := true;
+end;
+
+procedure TCommaSeparatedValues.Replace(const No: Integer);
+begin
+  CheckIndex(No);
+  Flines.StringList[No].Assign(Fields);
+  FChanged := true;
+end;
+
+procedure TCommaSeparatedValues.Exchange(const No1, No2: integer);
+begin
+  CheckIndex(No1);
+  CheckIndex(No2);
+  
+  Flines.Exchange(No1, No2);
   FChanged := true;
 end;
 
@@ -233,27 +249,26 @@ begin
   Result := FieldNames.IndexOf(Name);
 end;
 
-procedure TCommaSeparatedValues.AddField(const Name: string; const Txt: string =
-  '');
+procedure TCommaSeparatedValues.AddField(const Name: string; const Txt: string = '');
 var I: Integer;
 begin
-  //InsertField(FieldNames.Count, Name, Txt);
-
   FieldNames.Add(Name); // add fieldname
   NewEntry.Add('');
   Fields.Add('');
 
-  // create an extra stringlist in FLines
-  FLines.Add;
-  for I := 0 to FLineCount - 1 do // add empty field in each record
-    FLines[FLines.Count - 1].Add(Txt);
+  for I := 0 to FLineCount - 1 do // add a field in each record
+  begin
+    FIndex := I;
+    ReadFields;
+    Fields.Add(Txt);
+    WriteFields;
+  end;
 
-  ReadFields;
   FChanged := true;
 end;
 
-procedure TCommaSeparatedValues.InsertField(const No: Integer; const Fld:
-  string; const Txt: string = '');
+
+procedure TCommaSeparatedValues.InsertField(const No: Integer; const Fld: string; const Txt: string = '');
 var
   I: Integer;
 begin
@@ -263,13 +278,13 @@ begin
     NewEntry.Insert(No, '');
     Fields.Insert(No, '');
 
-    // create an extra stringlist in FLines
-    FLines.Insert(No);
-
     for I := 0 to FLineCount - 1 do // insert empty field in each record
-      FLines[No].Add(Txt);
-
-    ReadFields;
+    begin
+      FIndex := I;
+      ReadFields;
+      Fields.Insert(No, Txt);
+      WriteFields;
+    end;
 
     FChanged := true;
   end
@@ -279,7 +294,9 @@ begin
       [No, 0, FieldNames.Count]);
 end;
 
+
 procedure TCommaSeparatedValues.DeleteField(const No: Integer);
+var I: integer;
 begin
   CheckFieldNumber(No);
 
@@ -287,8 +304,21 @@ begin
   NewEntry.Delete(No);
   Fields.Delete(No);
 
-  ReadFields;
+  for I := 0 to FLineCount - 1 do // insert empty field in each record
+    begin
+      FIndex := I;
+      ReadFields;
+      Fields.Delete(No);
+      WriteFields;
+    end;
+
   FChanged := true;
+end;
+
+procedure TCommaSeparatedValues.RenameField(const No: Integer; NewName: string);
+begin
+  CheckFieldNumber(No);
+  Fieldnames[No] := NewName;
 end;
 
 {
@@ -318,6 +348,7 @@ The result of the function:
  2 = "OldField2" does not exist
  3 = operator not recognized
 }
+
 
 function TCommaSeparatedValues.AddCalculatedField(const FieldDef: string):
   Integer;
@@ -782,7 +813,7 @@ begin
           CSVToTStrings(TmpS, FieldNames);
           for I := 0 to FieldNames.Count - 1 do
           begin
-            FLines.Add;
+            FieldNames[I] := trim(FieldNames[I]);  // Added 2011-09-23
             Fields.Add('');
             NewEntry.Add('');
           end;
