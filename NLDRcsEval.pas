@@ -2,7 +2,7 @@ unit NLDRcsEval;
 
 // Dany Rosseel
 
-{.$DEFINE NoDebug}// Disable debug possibilities and range checking (= faster)
+{-$DEFINE NoDebug}// Disable debug possibilities and range checking (= faster)
 // {.$Define NoDebug}: During debugging
 // {$Define NoDebug} : During "normal" use
 
@@ -29,11 +29,11 @@ unit NLDRcsEval;
               * Added exceptions for missing function arguments
               * Taken into account the remarks of Jelmer Vos, see NLDelphi
                 http://www.nldelphi.com/Forum/showpost.php?p=232921&postcount=34
-  17-07-2007: * Made the execption for missing right function parenthesis more correct
+  17-07-2007: * Made the exception for missing right function parenthesis more correct
   18-07-2007: * Made nested functions with more than 1 argument work
               * Added the "IfThen" function
-       * Added the "=", "<" and ">" operators
-       * Cleaned up somewhat and made all local routines (private) TSimpleEval methods
+              * Added the "=", "<" and ">" operators
+              * Cleaned up somewhat and made all local routines (private) TSimpleEval methods
   19-07-2007: * Added the "not" function
   20-07-2007: * Added the "|" and the "&" boolean operators
                 "|" as logical "or" and
@@ -42,7 +42,8 @@ unit NLDRcsEval;
                 (a > b) & (c > d) : means (a > b) and (c > d)
   21-07-2007: * Solved a precision issue
   22-07-2007: * Used "FloatToString" now in stead of "FloatToStrF"
-  01-08-2007: * Solved an inconvenience ( "a - -b" does not give an error any more) 
+  01-08-2007: * Solved an inconvenience ( "a - -b" does not give an error any more)
+  18-10-2014: * Added the function "Select"
 }
 
 {$IFDEF NoDebug}
@@ -75,10 +76,10 @@ uses Classes, SysUtils;
 const
   SimpleEvalOperators = ['+', '-', '*', '/', '^', '%', '=', '>', '<', '|', '&'];
 
-  SimpleEvalFunctions: array[0..28] of string =
+  SimpleEvalFunctions: array[0..29] of string =
   ('abs', 'int', 'frac', 'round', 'ceil', 'floor', 'sum', 'avg',
     'min', 'max', 'sqrt', 'pi', 'logn', 'log', 'power', 'sign',
-    'ifthen', 'not', 'rad', 'deg', 'cmp', 'ln', 'exp',
+    'ifthen', 'select', 'not', 'rad', 'deg', 'cmp', 'ln', 'exp',
     'sin', 'cos', 'tan', 'arcsin', 'arccos', 'arctan');
 
 type
@@ -109,7 +110,6 @@ type
 
 type ESimpleEvalException = class(Exception);
 
-
 implementation
 
 uses NLDRcsStrings, NLDRcsLists, StrUtils, Math;
@@ -122,7 +122,6 @@ function TSimpleEval.GetResult: real;
 begin
   Result := EvalNumerical(FFormula);
 end;
-
 
 // -------------------------------------------------------------------
 // "EvalNumerical" evaluates the expression in string S and returns the numerical result
@@ -254,7 +253,6 @@ begin
   Result := Tussen;
 end;
 
-
 // -------------------------------------------------------------------
 // "HasParenthesis" finds (starting from "StartPos") the position of the first parenthesis in string S,
 // its matching closing one, and returns the string in between
@@ -288,7 +286,6 @@ begin
   end;
 end;
 
-
 // -------------------------------------------------------------------
 // "ProcessBetweenParenthesis" replaces expressions between Parenthesis by their actual value
 // -------------------------------------------------------------------
@@ -304,7 +301,6 @@ begin
     S := LeftStr(S, Lp - 1) + ' ' + FloatToString(TmpR) + ' ' + Copy(S, Rp + 1, MaxInt);
   end;
 end;
-
 
 // -------------------------------------------------------------------
 // "HasFunction" returns data about the first function call found in expression S:
@@ -341,7 +337,7 @@ begin
       if // Before the keyword
         (
         (P = 1) or // none
-        (S[P - 1] in [' ', #9] + SimpleEvalOperators) // space, tab or Operator
+        (S[P - 1] in [' ', #9, ','] + SimpleEvalOperators) // space, tab, comma or Operator
         )
         and // After the keyword
         (
@@ -354,7 +350,6 @@ begin
 
         // test if an argument for the function is there
         if HasParenthesis(S, LeftPar, RightPar, Arg_, Tmp1) then
-
         begin
           // get string between function name and opening parenthesis
           TmpS1 := Trim(Copy(TmpS, Tmp1, LeftPar - Tmp1));
@@ -388,7 +383,6 @@ begin
 
 end;
 
-
 // -------------------------------------------------------------------
 // "ReplaceFunctionCalls" replaces all function calls in expression S
 // by their actual (numerical) value
@@ -405,7 +399,6 @@ begin
     S := LeftStr(S, FncBegin - 1) + ' ' + FloatToString(TempR) + ' ' + Copy(S, FncEnd + 1, MaxInt);
   end;
 end;
-
 
 // -------------------------------------------------------------------
 // "SolveFunction" returns the numerical result of the
@@ -453,7 +446,6 @@ begin
     {
     At this point all arguments have been resolved to their numerical value
     }
-
 
     // ------------------------------ //
     // Execute the actual function. //
@@ -677,6 +669,15 @@ begin
         Exit;
       end;
 
+    // "Select" returns Arugment[1] if argument[0] is 0,
+    // Argument[2] is Argument[0] is 1 etc.
+    // So, result = Argument[Argument[0] +1]
+      if func_ = 'select' then
+      begin
+        Result := Argument[Round(Argument[0] + 1)];
+        exit;
+      end;
+
     // "Not" returns 1 when Argument[0] is 0 and vice versa
       if func_ = 'not' then
       begin
@@ -703,7 +704,6 @@ begin
   end;
 end;
 
-
 // -------------------------------------------------------------------
 // "RemoveOuterParenthesis" removes matching parenthesis if
 // they are at the beginning and end of expression S
@@ -717,7 +717,6 @@ begin
     (Lp = 1) and
     (Rp = Length(S)) do S := Trim(TmpS);
 end;
-
 
 // -------------------------------------------------------------------
 // "GetValue" returns the numerical value of the string S,
@@ -733,10 +732,10 @@ begin
     then Result := StrToFloat(S) // simple numerical value
 
   else
-  if S[1] in ['+', '-'] then Result := EvalNumerical(S) // still an expression of some kind
+    if S[1] in ['+', '-'] then Result := EvalNumerical(S) // still an expression of some kind
 
   else
-  begin  // named value (Variable)
+  begin // named value (Variable)
     try
       Result := StrToFloat(FVars.Values[S]);
     except
@@ -745,9 +744,6 @@ begin
   end;
 
 end;
-
-
-
 
 // -------------------------------------------------------------------
 // "SetVar" sets the value of a variable used in an expression

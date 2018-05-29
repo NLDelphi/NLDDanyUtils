@@ -33,6 +33,7 @@ unit NLDSimpleIniFile;
   15-08-2005: * Added the type "TMaskEdit" to the "WriteObject" and "ReadObject" procedures
   19-11-2006: * Disabled the formatting action on read only inifiles.
 	      * Improved the formatting action.
+  30-01-2010: * Added the type "TRadioGroup" to the to the "WriteObject" and "ReadObject" procedures
 }
 
 {$IFDEF NoDebug}
@@ -164,12 +165,13 @@ begin
 end;
 
 destructor TSimpleIniFile.Destroy;
-var
-  Orig, Formatted: TStrings;
-  I: Integer;
+//var
+  //Orig, Formatted: TStrings;
+  //I: Integer;
 begin
   inherited destroy; // close the Inifile
-
+  
+  {
   // Format the IniFile
   if FileExists(IniFileName) and
     (not FileIsReadOnly(IniFileName)) then
@@ -195,6 +197,7 @@ begin
       Formatted.Free;
     end;
   end;
+  }
 end;
 
 procedure TSimpleIniFile.WriteTStrings(const Section, Key: string; Texts:
@@ -280,6 +283,14 @@ begin
     end;
   end;
 
+  if Obj is TRadioGroup then
+  begin
+    with Obj as TRadioGroup do
+    begin
+      WriteInteger(Section, 'Index', ItemIndex);
+    end;
+  end;
+
 end;
 
 procedure TSimpleIniFile.ReadObject(const Section: string; Obj: TObject);
@@ -326,6 +337,14 @@ begin
       Text := ReadString(Section, Name, '');
       ReadTStrings(Section, Name + '_list', Items);
       ItemIndex := Items.Indexof(trim(Text));
+    end;
+  end;
+
+  if Obj is TRadioGroup then
+  begin
+    with Obj as TRadioGroup do
+    begin
+      ItemIndex := ReadInteger(Section, 'Index', 0);
     end;
   end;
 

@@ -3,11 +3,46 @@ unit NLDRcs_Resize;
 {-$DEFINE FONTRESIZE}
 {-$DEFINE STRINGGRIDRESIZE}
 
+{.$DEFINE NoDebug} // Disable debug possibilities and range checking (= faster)
+// {.$Define NoDebug}: During debugging
+// {$Define NoDebug} : During "normal" use
+
+{ History of this unit:
+  11-10-2017: * Initial version
+  14-10-2017: * Corrected an error for associated TUpDown components
+}
+
+{$P+} // Open Strings ON
+{$H+} // Long Strings ON
+
+{$IFDEF NoDebug}
+
+{$O+} // Optimisation ON
+{$D-} // Debug information OFF
+{$I-} // I/O checking OFF
+{$L-} // Local Symbols OFF
+{$Q-} // Overflow Checking OFF
+{$R-} // Range Checking OFF
+
+{$ELSE}
+{$O-} // Optimisation OFF
+{$D+} // Debug information ON
+{$I+} // I/O checking ON
+{$L+} // Local Symbols ON
+{$Q+} // Overflow Checking ON
+{$R+} // Range Checking ON
+
+{$ENDIF}
+
+{$W-} // Stack Frames OFF
+{$WARN SYMBOL_PLATFORM OFF}
+{$WARN UNIT_PLATFORM OFF}
+
 interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Forms, Dialogs, Controls,
-  StdCtrls, Buttons, ExtCtrls, ComCtrls, QComCtrls, Mask, Grids;
+  StdCtrls, Buttons, ExtCtrls, ComCtrls, Mask, Grids;
 
 type
   TDimension = record
@@ -182,7 +217,7 @@ begin
           Control.Left :=
             TUpDown(Control).Associate.Left + TUpDown(Control).Associate.Width;
           Control.Top := TUpDown(Control).Associate.Top;
-          Control.Height := H;
+          Control.Height := TUpDown(Control).Associate.Height;
           Control.Width := W;
         end;
       end

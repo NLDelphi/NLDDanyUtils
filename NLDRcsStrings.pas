@@ -2,8 +2,8 @@ unit NLDRcsStrings;
 
 // Dany Rosseel
 
-{$DEFINE NoDebug}                                 // Disable debug possibilities and range checking (= faster)
-// {.$Define NoDebug}: During debugging
+{-$DEFINE NoDebug}                                 // Disable debug possibilities and range checking (= faster)
+// {$Define NoDebug}: During debugging
 // {$Define NoDebug} : During "normal" use
 
 {.$Define FastStrings}// Usage of the FastStrings version of PosN
@@ -80,7 +80,10 @@ unit NLDRcsStrings;
 16-02-2008:  * Added the following weeknumber related routines:
 		- DateToWeekNo
 		- WeekNoToDate
-	       WeekNo is a string of the format "yyww.d" 
+	       WeekNo is a string of the format "yyww.d"
+20-07-2008:  * Added the function "NumericalString"
+18-01-2011:  * Had to use the old version of fillstring again, the new one did not work under Delphi XE (widestrings)
+             * Also went back to older versions of functions that used "CopyMemory"
 }
 
 {$X+}                                             // Extended Syntax
@@ -313,7 +316,7 @@ function FloatToString(const V: Real): string;
 // The scientific notation ("E") is never used.
 
 function IsNumber(S: string): boolean;
-// IsNumeric checks if S is a valid number (allows floating point non scientific notation)
+// IsNumber checks if S is a valid number (allows floating point non scientific notation)
 
 function DateToWeekNo(Dat: string): string;
 // Returns the weeknumber of date Dat. The format of the result is "yymm.d".
@@ -324,6 +327,8 @@ function WeekNoToDate(WeekNo: string): string;
 // Returns the date corresponding to the weeknumber "WeekNo"
 // only valid from year 2000 till 2099
 
+function NumericalString(S: string): string;
+// Returns the argument with all non numerical characters removed
 
 implementation
 
@@ -803,8 +808,8 @@ begin
   Delete(Result, Start, Stop - Start + 1);
 end;
 
-function DeleteString(Source, Tag1, Tag2: string; const All: Boolean =
-  false): string; overload
+{
+function DeleteString(Source, Tag1, Tag2: string; const All: Boolean = false): string; overload;
 var
   P1, P2, Lt2: Integer;
   P, NewLen, L: Integer;
@@ -856,11 +861,11 @@ begin
     SetLength(Result, NewLen);
   end;
 end;
+}
 
-{
+
 // Original version
-function DeleteString(const Source, Tag1, Tag2: string; All: Boolean =
-  false): string;
+function DeleteString(Source, Tag1, Tag2: string; const All: Boolean = false): string; overload;
 var
   P1, P2, Lt2: Integer;
 begin
@@ -885,13 +890,13 @@ begin
     end;
   end;
 end;
-}
 
 procedure DeleteStringProc(var Source: string; const Start, Stop: Integer);
 begin
   Delete(Source, Start, Stop - Start + 1);
 end;
 
+{
 procedure DeleteStringProc(var Source: string; const Tag1, Tag2: string; const All:
   Boolean =
   false);
@@ -953,10 +958,10 @@ begin
 
   Source := Tmp;                                  // give back result
 end;
+}
 
-{ // Original version
-procedure DeleteStringProc(var Source: string; const Tag1, Tag2: string; All: Boolean =
-  false);
+ // Original version
+procedure DeleteStringProc(var Source: string; const Tag1, Tag2: string; const All: Boolean = false);
 var
   P1, P2, L: Integer;
 begin
@@ -979,7 +984,7 @@ begin
     end;
   end;
 end;
-}
+
 
 {$IFDEF FastStrings}
 
@@ -1164,7 +1169,7 @@ end;
 }
 
 {$ENDIF}
-
+{
 procedure FillString(const SubString: string; var S: string; Position: Word);
 var
   L1, L2, Tmp: Integer;
@@ -1180,8 +1185,9 @@ begin
   if L1 < (Tmp) then S := S + StringOfChar(' ', Tmp - L1); // make the string long enough, pad with spaces
   CopyMemory(@S[Position], @SubString[1], L2);
 end;
+}
 
-{ Old (slow) version of FillString
+// Old (slow) version of FillString
 procedure FillString(const SubString: string; var S: string; Position: Word);
 begin
   if (Position = 0) then
@@ -1191,7 +1197,7 @@ begin
     S := S + ' ';
   Insert(SubString, S, Position);
 end;
-}
+
 
 function CenterString(S: string; const Mode: CenterMode; const Len: Word): string;
 var
@@ -1248,7 +1254,7 @@ end;
 
 function YYMMDDString: string;
 var
-  OldShortDateFormat: string[15];
+  OldShortDateFormat: string; // was string[15];
 begin
   OldShortDateFormat := ShortDateFormat;
   ShortDateFormat := 'yymmdd';
@@ -1258,7 +1264,7 @@ end;
 
 function YYYYMMDDString: string;
 var
-  OldShortDateFormat: string[15];
+  OldShortDateFormat: string; // was string[15];
 begin
   OldShortDateFormat := ShortDateFormat;
   ShortDateFormat := 'yyyymmdd';
@@ -1268,7 +1274,7 @@ end;
 
 function DayMonthYearString: string;
 var
-  OldShortDateFormat: string[15];
+  OldShortDateFormat: string; // was string[15];
 begin
   OldShortDateFormat := ShortDateFormat;
   ShortDateFormat := 'dd-mm-yy';
@@ -1278,7 +1284,7 @@ end;
 
 function TimeString: string;
 var
-  OldLongTimeFormat: string[15];
+  OldLongTimeFormat: string; // was string[15];
 begin
   OldLongTimeFormat := LongTimeFormat;
   LongTimeFormat := 'hh:nn:ss';
@@ -1345,7 +1351,7 @@ end;
 
 function BinString(const B: Byte): string;
 var
-  Tmp: string[9];
+  Tmp: string; // was string[9]
   Divider: Byte;
 begin
   Divider := 128;
@@ -1409,8 +1415,9 @@ begin
 
   S := Trim(S);
 
-  // test leading character
   Result := true;
+
+  // test leading character
   if (S = '') or
     (not (S[1] in ValidLeadingChars)) then
   begin
@@ -1478,6 +1485,14 @@ begin
   Dy := StrToInt(RightStr(Tmp,1));
 
   Result := DateToStr(EncodeDateWeek(Yr, Wk, Dy));
+end;
+
+function NumericalString(S: string): string;
+var I : word;
+begin
+  Result := '';
+  for I := 1 to Length(S) do
+    if (S[I] in ['0'..'9', '.']) then Result := Result + S[I];
 end;
 
 end.
