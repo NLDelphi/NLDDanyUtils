@@ -12,6 +12,7 @@ unit NLDRcs_Resize;
   30-03-2018: * allow also resize < factor 1
   09-06-2018: * Replaced the conditional compilations by parameters in the create function
   15-06-2018: * Resizing is more linear now (Client sizes used)
+  23-06-2018: * "Create" and "Resize" can now have any TControl type to start from
 }
 
 {$P+} // Open Strings ON
@@ -44,7 +45,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Forms, Dialogs, Controls,
-  StdCtrls, Buttons, ExtCtrls, ComCtrls, {QComCtrls,} Mask, Grids, spin;
+  StdCtrls, Buttons, ExtCtrls, ComCtrls, Mask, Grids, spin;
 
 type
   TDimension = record
@@ -68,9 +69,9 @@ type
     procedure MyGetDims(Control: TControl; TopLevel: boolean);
     procedure MyChangeDims(Control: TControl; TopLevel: boolean);
   public
-    constructor Create(F: TForm; Fnct: TResizeCallbackFunction = nil; ResizeFont: boolean = false);
+    constructor Create(F: TControl; Fnct: TResizeCallbackFunction = nil; ResizeFont: boolean = false);
     destructor Destroy; override;
-    procedure Resize(F: TForm);
+    procedure Resize(F: TControl);
   end;
 
 implementation
@@ -255,7 +256,7 @@ begin
   end;
 end;
 
-constructor TMyResize.Create(F: TForm; Fnct: TResizeCallbackFunction = nil;
+constructor TMyResize.Create(F: TControl; Fnct: TResizeCallbackFunction = nil;
                              ResizeFont: boolean = false);
 begin
   inherited Create;
@@ -264,7 +265,7 @@ begin
   MyGetDims(F, true); // get the original dimensions
 end;
 
-procedure TMyResize.Resize(F: TForm);
+procedure TMyResize.Resize(F: TControl);
 begin
   MyChangeDims(F, true); // do resize of all components
 end;
