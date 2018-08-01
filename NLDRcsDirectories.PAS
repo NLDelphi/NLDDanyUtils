@@ -9,6 +9,7 @@ unit NLDRcsDirectories;
 { History of this unit:
   27-06-2004: * Initial version, with thanks to walterheck.
   27-02-2011: * Adapted for Delphi XE and Windows 7
+  01-08-2018: * Adapted for higher versions than Windows 7 (e.g. Windows 10)
 }
 
 (*
@@ -69,7 +70,7 @@ const
 
 type
   TOSType = (osWin95, osWin98, osWinME, osWinNT4, osWin2K,
-    osWinXP, osWin7, osUnknown, osUnknown9x, osUnknownNT);
+    osWinXP, osWin7, osWin8, osWin8_1, osWin10, osUnknown, osUnknown9x, osUnknownNT);
 
   TLocationType = (
 
@@ -216,8 +217,12 @@ begin
       6: // windows7
         case RawInfo.dwMinorVersion of
           1: Result := osWin7;
+          2: Result := osWin8;
+          3: Result := osWin8_1;
         else Result := osUnknown;
         end;
+      10: // windows 10
+        Result := osWin10;
     else
       Result := osUnknown;
     end;
@@ -308,7 +313,7 @@ begin
         end;
       end;
 
-    osWinME, osWin2K, osWinXP, osWin7:
+    osWinME, osWin2K, osWinXP, osWin7, osWin8, osWin8_1, osWin10:
       begin
         case Location of
           locCommonDesktop:
@@ -423,7 +428,7 @@ begin
 
   case GetOSVersion of
     osWin95, osWin98, osWinNT4: Result := PrefixPath;
-    osWinME, osWin2K, osWinXP, osWin7: Result := string(PrefixPathA);
+    osWinME, osWin2K, osWinXP, osWin7, osWin8, osWin8_1, osWin10: Result := string(PrefixPathA);
   end;
 end;
 
