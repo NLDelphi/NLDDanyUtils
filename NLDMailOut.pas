@@ -13,7 +13,8 @@ unit NLDMailOut;
               instead the unit 'SMTP_Register' has been added (common for this unit ans 'SMTPSetup').
             * The routine 'Recall_Default_MailOut_Params_and_Addresses' is added.
 28-07-2018: * The 'init' routine has been removed. The registry items are not there... anymore
-30-07-2018: * Finaly got 'Attachments' working, thanks to "http://www.indyproject.org/Sockets/Blogs/RLebeau/2005_08_17_A.EN.aspx"          
+30-07-2018: * Finaly got 'Attachments' working, thanks to "http://www.indyproject.org/Sockets/Blogs/RLebeau/2005_08_17_A.EN.aspx"   
+02-08-2018: * Changed "Mess.ContentType" into 'text/plain' (was 'multipart/alternative'), some servers had problems      
 }
 
 {$WARN SYMBOL_PLATFORM OFF}
@@ -136,7 +137,7 @@ begin
     try
       Mess.Encoding := meMIME;
       Mess.AttachmentEncoding := 'MIME';
-      Mess.ContentType := 'multipart/alternative';
+      Mess.ContentType := 'text/plain'; //'multipart/alternative';
       Mess.Charset := 'iso-8859-1';
       Mess.ContentTransferEncoding := '7bit';
 
