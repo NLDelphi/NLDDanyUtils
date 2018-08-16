@@ -14,9 +14,9 @@ unit NLDRcs_Resize;
   15-06-2018: * Resizing is more linear now (Client sizes used)
   23-06-2018: * "Create" and "Resize" can now have any TControl type to start from
   28-06-2018: * Ingored not found components now (were not existing during creation)
-  11-07-2018: * Added the 'MaxfontSize' item
+  11-07-2018: * Added the 'MaxFontSize' property
   16-08-2018: * Also adapted the font size of the toplevel
-              * Restricted the minimum font size to the original one
+              * Added the 'MinFontSize' property
 }
 
 {$P+} // Open Strings ON
@@ -74,6 +74,7 @@ type
     procedure MyChangeDims(Control: TControl; TopLevel: boolean);
   public
     MaxFontSize: integer;
+    MinFontSize: integer;
     constructor Create(F: TControl; Fnct: TResizeCallbackFunction = nil; ResizeFont: boolean = false);
     destructor Destroy; override;
     procedure Resize(F: TControl);
@@ -136,6 +137,21 @@ var
   Tdg: TDrawGrid;
   Found: boolean;
   Factor: real;
+
+  procedure AdaptFontSize(Ind: integer);
+  begin
+    if FResizeFont then // adapt the toplevel fontsize to the new dimensions
+    begin
+      Factor := Min(VFactor, HFactor);
+      S := Trunc(Factor * MyDims[Ind].S);
+
+      if (MaxFontSize > 0) and (S > MaxFontSize) then S := MaxFontSize;
+      if (MinFontSize > 0) and (S < MinFontSize) then S := MinFontSize;
+
+      TEdit(Control).Font.Size := S;
+    end;
+  end;
+
 begin
 
   if TopLevel then // toplevel, get the new dimensions
@@ -146,14 +162,7 @@ begin
     HFactor := NewWidth / MyDims[0].W;
     VFactor := NewHeight / MyDims[0].H;
 
-    // added
-    if FResizeFont then // adapt the toplevel fontsize to the new dimensions
-    begin
-      Factor := (VFactor + HFactor) / 2; // average
-      S := Ceil(Factor * MyDims[0].S);      
-      if S < MyDims[0].S then S := MyDims[0].S;
-      TEdit(Control).Font.Size := S;
-    end;
+    AdaptFontSize(0);
   end
   else
   begin
@@ -186,15 +195,7 @@ begin
       L := Trunc(HFactor * MyDims[Index].L);
       T := Trunc(VFactor * MyDims[Index].T);
 
-      if FResizeFont then
-      begin
-        Factor := (VFactor + HFactor) / 2; // average
-        S := Ceil(Factor * MyDims[Index].S);
-        if S > MaxFontSize then S := MaxFontSize;
-        if S < MyDims[Index].S then S := MyDims[Index].S;
-
-        TEdit(Control).Font.Size := S;
-      end;
+      AdaptFontSize(Index);
 
       if (Control is TComboBox) then // special case
       begin
@@ -286,6 +287,7 @@ begin
   FResizeFont := ResizeFont;
   MyGetDims(F, true); // get the original dimensions
   MaxFontSize := 0;
+  MinFontSize := 0;
 end;
 
 procedure TMyResize.Resize(F: TControl);
